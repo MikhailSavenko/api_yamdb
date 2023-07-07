@@ -11,6 +11,7 @@ from .pagination import ReviewsPagination
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для ревью."""
+
     serializer_class = ReviewSerializer
     permission_classes = IsAuthenticatedOrReadOnly
     pagination_class= ReviewsPagination

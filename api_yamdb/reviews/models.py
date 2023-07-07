@@ -4,7 +4,9 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 User = get_user_model()
 
-class Reviews(models.Model):
+class Review(models.Model):
+    """Модель для отзывов."""
+
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name= 'reviews', verbose_name= 'Название произведения'
     )
@@ -19,3 +21,6 @@ class Reviews(models.Model):
         'Дата публикации',
         auto_now_add=True
     )
+
+    def __str__(self):
+        return f"Отзыв от {self.author.username} на произведение '{self.title}'"
