@@ -2,14 +2,15 @@ from rest_framework import serializers
 from reviews.models import Reviews
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Review."""
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field = 'username',
     )
-    class meta:
+    class Meta:
         model = Reviews,
         field = ('id', 'text', 'author', 'score', 'pub_date',)
-        read_only_fields = ('autor', 'pub_date',)
+        read_only_fields = ('author', 'pub_date',)
 
     def validate(self, data):
         author = self.context['request'].author
