@@ -9,9 +9,9 @@ VERSION = 'v1'
 
 router_1 = DefaultRouter()
 router_1.register(
-r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='titles'
+    r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='titles'
 )
 
 urlpatterns = [
-path(f'{VERSION}/', include((router_1.urls))),
+    path(f'{VERSION}/', include((router_1.urls))),
 ]
