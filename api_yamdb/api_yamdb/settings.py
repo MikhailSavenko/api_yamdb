@@ -113,6 +113,7 @@ STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
+        # Поменять после настройки логики прав доступа во вьюсетах
         'rest_framework.permissions.AllowAny', 
     ],
 
@@ -139,7 +140,7 @@ AUTH_USER_MODEL = 'users.Users'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
+EMAIL_PORT = 465
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'sredawork26@gmail.com'  
 EMAIL_HOST_PASSWORD = 'sredawork557'

@@ -7,13 +7,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import viewsets
-from django.contrib.auth import get_user_model
 
 
 class UsersSignUpViewSet(viewsets.ModelViewSet):
     """Регистрация пользователя"""
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
+    # permissions_classes = (AllowAny,)
 
     def perform_create(self, serializer):
         email = serializer.validated_data['email']
@@ -22,7 +22,8 @@ class UsersSignUpViewSet(viewsets.ModelViewSet):
         confirmation_code = generate_confirmation_code()
         user = Users.objects.create_user(email=email, username=username, confirmation_code=confirmation_code)
         user.save()
-        # отправляем код подтверждения. Нужно настроить нормально сервер почтовый! для отправки
+        # отправляем код подтверждения. Нужно настроить нормально сервер
+        # почтовый! Для реальной отправки. 
         send_confirmation_code(email, confirmation_code)
 
 
@@ -30,20 +31,18 @@ class UsersViewSet(viewsets.ModelViewSet):
     """Users GRUD"""
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
+    # pagination_class = UsersCustomPagination
+    # permissions_classes = (IsAdminUser, IsAuthentificatedOrReadOnly)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data['email']
-        username = serializer.validated_data['username']
         confirmation_code = generate_confirmation_code()
-
-        user = get_user_model().objects.create_user(email=email, username=username, confirmation_code=confirmation_code)
-        user.save()
+        serializer.save(confirmation_code=confirmation_code)
         # отправляем в ответ на POST запрос код в API
         return Response({'confirmation_code': confirmation_code})
-    
+
 
 class CustomObtainJWTView(APIView):
     """Отправляет JWT токен в ответ на ПОСТ запрос с кодом"""
@@ -67,16 +66,16 @@ class CustomObtainJWTView(APIView):
 
 def generate_confirmation_code():
     """Генерирует код для отправки пользователю на email"""
-    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
     return code
 
 
 def send_confirmation_code(email, confirmation_code):
     """Отправляем email сообщение пользователю с его кодом"""
-    send_mail(
-        'Код подтверждения',
-        f'Код подтверждения для регистрации: {confirmation_code}',
-        'sredawork26@gmail.com',
-        [email],
-        fail_silently=False
-    )
+    subject = 'Код подтверждения'
+    message = f'Код подтверждения для регистрации: {confirmation_code}'
+    from_email = 'sredawork26@gmail.com'
+    recipient_list = [email]
+    fail_silently = True
+
+    send_mail(subject, message, from_email, recipient_list, fail_silently)

@@ -9,6 +9,7 @@ ROLE_CHOICES = (
 
 
 class Users(AbstractUser):
+    """Модель Пользователя."""
     username = models.CharField(max_length=30, unique=True, blank=False)
     email = models.EmailField(unique=True, blank=False, null=False)
     confirmation_code = models.CharField(max_length=10, blank=True)
@@ -16,6 +17,3 @@ class Users(AbstractUser):
     bio = models.TextField(blank=True)
     first_name = models.CharField(max_length=150, blank=True, verbose_name='Имя')
     last_name = models.CharField(max_length=150, blank=True, verbose_name='Фамилия')
-    is_active = models.BooleanField(default=True)
-    is_admin = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)
