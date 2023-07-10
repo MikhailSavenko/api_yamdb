@@ -1,47 +1,50 @@
-import random
-import string
-from api.serializers import UsersSerializer
-from users.models import Users
+from api.serializers import UserSerializer, UserSignUpSerializer
+from users.models import User
 from django.core.mail import send_mail
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import viewsets
+from rest_framework.permissions import AllowAny, IsAdminUser
+from django.contrib.auth.tokens import default_token_generator  
+from rest_framework import status
+from django.core.mail import send_mail
 
 
-class UsersSignUpViewSet(viewsets.ModelViewSet):
+class UserSignUpViewSet(viewsets.ModelViewSet):
     """Регистрация пользователя"""
-    queryset = Users.objects.all()
-    serializer_class = UsersSerializer
-    # permissions_classes = (AllowAny,)
+    queryset = User.objects.all()
+    serializer_class = UserSignUpSerializer
+    permission_classes = (AllowAny,)
 
-    def perform_create(self, serializer):
-        email = serializer.validated_data['email']
-        username = serializer.validated_data['username']
-        # генерирую код
-        confirmation_code = generate_confirmation_code()
-        user = Users.objects.create_user(email=email, username=username, confirmation_code=confirmation_code)
-        user.save()
-        # отправляем код подтверждения. Нужно настроить нормально сервер
-        # почтовый! Для реальной отправки. 
-        send_confirmation_code(email, confirmation_code)
-
-
-class UsersViewSet(viewsets.ModelViewSet):
-    """Users GRUD"""
-    queryset = Users.objects.all()
-    serializer_class = UsersSerializer
-    # pagination_class = UsersCustomPagination
-    # permissions_classes = (IsAdminUser, IsAuthentificatedOrReadOnly)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+    def create(self, request):
+        if User.objects.filter(username=request.POST.get('username')).exists():
+            return Response('Пользователь уже существует', status=status.HTTP_200_OK)
+        serializer = UserSignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
+        username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
+        
+        try:
+            user = User.objects.get(username=username)
+            confirmation_code = default_token_generator.make_token(user)
+            send_confirmation_code(email=user.email, confirmation_code=confirmation_code)
+        except User.DoesNotExist:
+            user = User.objects.create(username=username, email=email)
+            confirmation_code = default_token_generator.make_token(user)
+            send_confirmation_code(email=email, confirmation_code=confirmation_code)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        confirmation_code = generate_confirmation_code()
-        serializer.save(confirmation_code=confirmation_code)
-        # отправляем в ответ на POST запрос код в API
-        return Response({'confirmation_code': confirmation_code})
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """User GRUD"""
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'username'
+    # permission_classes = (IsAdminUser,)
 
 
 class CustomObtainJWTView(APIView):
@@ -56,18 +59,12 @@ class CustomObtainJWTView(APIView):
             return Response({'error': 'Заполните все обязательные строки'})
 
         try:
-            user = Users.objects.get(username=username, confirmation_code=confirmation_code)
-        except Users.DoesNotExist:
+            user = User.objects.get(username=username, confirmation_code=confirmation_code)
+        except User.DoesNotExist:
             return Response({'error': 'Неправильный логин или код доступа'})
 
         refresh = RefreshToken.for_user(user)
         return Response({'token': str(refresh.access_token)})
-
-
-def generate_confirmation_code():
-    """Генерирует код для отправки пользователю на email"""
-    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
-    return code
 
 
 def send_confirmation_code(email, confirmation_code):
