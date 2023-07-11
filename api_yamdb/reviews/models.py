@@ -1,4 +1,7 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+from users.models import User
 
 from .validators import validate_year_release
 
@@ -15,6 +18,7 @@ class Categorie(models.Model):
     slug = models.SlugField(max_length=50, unique=True, verbose_name='Метка')
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -32,6 +36,7 @@ class Genre(models.Model):
     slug = models.SlugField(max_length=50, unique=True, verbose_name='Метка')
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
@@ -42,12 +47,15 @@ class Genre(models.Model):
 class Title(models.Model):
     """Произведения (определённый фильм, книга или песенка)."""
     name = models.CharField(
+        max_length=256,
         verbose_name='Название произведения',
     )
     year = models.PositiveIntegerField(
         verbose_name='Год выпуска', validators=[validate_year_release]
     )
-    description = models.TextField(verbose_name='Описание произведения')
+    description = models.TextField(
+        null=True, blank=True, verbose_name='Описание произведения'
+    )
     category = models.ForeignKey(
         Categorie,
         null=True,
@@ -85,3 +93,29 @@ class GenreTitle(models.Model):
 
     def __str__(self):
         return f'{self.genre} {self.title}'
+
+
+class Review(models.Model):
+    """Модель для отзывов."""
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Название произведения',
+    )
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор',
+    )
+    score = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
+
+    def __str__(self):
+        return (
+            f"Отзыв от {self.author.username} на произведение '{self.title}'"
+        )

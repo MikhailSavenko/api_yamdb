@@ -22,6 +22,7 @@ MESSAGE = 'Импорт из файла {path} в таблицу {table} осу�
 
 
 class Command(BaseCommand):
+    """Импорт группы файлов в БД."""
     help = (
         'Импорт данных из файлов: users.csv, titles.csv, category.csv, '
         'genre.csv, genre_title.csv, review.csv, comments.csv в БД'
@@ -31,7 +32,9 @@ class Command(BaseCommand):
         connection = sqlite3.connect(settings.DATABASES['default']['NAME'])
         for path, table in PATH_TABLE:
             try:
-                data = pd.read_csv(os.path.join(settings.BASE_DIR, path), index_col=0)
+                data = pd.read_csv(
+                    os.path.join(settings.BASE_DIR, path), index_col=0
+                )
                 data.rename(columns=SERIES_NAME).to_sql(
                     table, connection, if_exists="append", index=False
                 )
