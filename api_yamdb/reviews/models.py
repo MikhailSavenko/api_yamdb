@@ -31,6 +31,7 @@ class Review(models.Model):
             f"Отзыв от {self.author.username} на произведение '{self.title}'"
         )
 
+
 class Comment(models.Model):
     """Модель для комментариев."""
     review = models.ForeignKey('Review', on_delete=models.CASCADE)
