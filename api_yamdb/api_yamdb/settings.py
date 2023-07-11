@@ -115,7 +115,7 @@ STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         # Поменять после настройки логики прав доступа во вьюсетах 
-        'rest_framework.permissions.AllowAny', 
+        'rest_framework.permissions.IsAuthenticated', 
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -125,12 +125,8 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    # Устанавливаем срок жизни токена
-   'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-   'AUTH_HEADER_TYPES': ('Bearer',),
-} 
-
-SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'username',
     'USER_ID_CLAIM': 'sub',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
