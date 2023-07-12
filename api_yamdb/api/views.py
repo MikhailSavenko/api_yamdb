@@ -1,3 +1,13 @@
+from django.shortcuts import render
+from django.shortcuts import get_object_or_404
+from django.db.models import Avg
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
+from reviews.models import Title, Review
+from .serializers import CommentSerializer
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -9,7 +19,7 @@ from api.serializers import (
 )
 from reviews.models import Categorie, Genre, Title
 
-from api.serializers import UserSerializer, UserSignUpSerializer, UserMeSerializer
+from api.serializers import UserSerializer, UserSignUpSerializer, UserMeSerializer, ReviewSerializer
 from users.models import User
 from django.core.mail import send_mail
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -25,6 +35,32 @@ from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
 from rest_framework.decorators import api_view, permission_classes
 
 
+class ReviewViewSet(viewsets.ModelViewSet):
+    """Вьюсет для ревью."""
+
+    serializer_class = ReviewSerializer
+    permission_classes = IsAuthenticatedOrReadOnly
+
+    def get_queryset(self):
+        title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
+        return title.reviews.all()
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, pk=self.kwargs.get("title_id"))
+        serializer.save(author=self.request.user, title=title)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """Вьюсет для Comment."""
+    serializer_class = CommentSerializer
+    permission_classes = IsAuthenticatedOrReadOnly
+
+    def perform_create(self, serializer):
+        title = self.kwargs['title_id']
+        review_id = self.kwargs['review_id']
+        review = get_object_or_404(Review, title_id=title, id=review_id)
+        serializer.save(review=review, author=self.request.user)
+        
 class CategorieViewSet(mixins.ListModelMixin,
                        mixins.CreateModelMixin,
                        mixins.DestroyModelMixin,
@@ -51,6 +87,7 @@ class GenreViewset(mixins.ListModelMixin,
     lookup_field = 'slug'
 
 
+
 class TitleViewSet(viewsets.ModelViewSet):
     """Получаем/создаем/удаляем/редактируем произведение."""
     queryset = Title.objects.all()
@@ -63,6 +100,14 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return TitleGetSerializer
         return TitleSerializer
+
+    def get_queryset(self):
+        if self.action in ('list', 'retrieve'):
+            queryset = (Title.objects.prefetch_related('reviews').all().
+                        annotate(rating=Avg('reviews__score')).
+                        order_by('name'))
+            return queryset
+        return Title.objects.all()
 
 
 @api_view(['POST'])
@@ -152,3 +197,5 @@ def send_confirmation_code(email, confirmation_code):
     fail_silently = True
 
     send_mail(subject, message, from_email, recipient_list, fail_silently)
+
+

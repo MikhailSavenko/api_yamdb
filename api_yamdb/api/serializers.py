@@ -1,8 +1,8 @@
+from reviews.models import Comment, Review
 from users.models import User
 from rest_framework import serializers
 import re
 from django.db.models import Avg
-from rest_framework import serializers
 from reviews.models import Categorie, Genre, Title
 
 
@@ -93,3 +93,50 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
+        
+class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Comment."""
+
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        model = Comment
+        fields = ('text', 'author', 'pub_date',)
+        read_only_fields = ('pub_date', 'author',)
+        
+        
+class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Review."""
+
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+    )
+
+    class Meta:
+        model = (Review,)
+        field = (
+            'id',
+            'text',
+            'author',
+            'score',
+            'pub_date',
+        )
+        read_only_fields = (
+            'author',
+            'pub_date',
+        )
+
+    def validate(self, data):
+        author = self.context['request'].author
+        title = self.context['view'].kwargs['title_id']
+        existing_reviews = Review.objects.filter(title=title, author=author)
+        if existing_reviews.exists():
+            raise serializers.ValidationError("Вы уже оставили отзыв.")
+
+        return data
+
+        
+   

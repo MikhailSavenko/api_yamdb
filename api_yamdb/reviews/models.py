@@ -119,3 +119,16 @@ class Review(models.Model):
         return (
             f"Отзыв от {self.author.username} на произведение '{self.title}'"
         )
+
+ 
+class Comment(models.Model):
+    """Модель для комментариев."""
+    review = models.ForeignKey('Review', on_delete=models.CASCADE)
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор',
+    )
+    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
