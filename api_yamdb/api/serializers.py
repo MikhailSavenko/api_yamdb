@@ -5,8 +5,9 @@ from django.db.models import Avg
 from rest_framework import serializers
 from reviews.models import Categorie, Genre, Title
 
+
 class UserMeSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'role', 'bio', 'first_name', 'last_name')
@@ -27,7 +28,7 @@ class UserMeSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    
+ 
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'role', 'bio', 'first_name', 'last_name')
