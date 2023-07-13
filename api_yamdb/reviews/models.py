@@ -1,6 +1,5 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-
 from users.models import User
 
 from .validators import validate_year_release
@@ -120,7 +119,7 @@ class Review(models.Model):
             f"Отзыв от {self.author.username} на произведение '{self.title}'"
         )
 
- 
+
 class Comment(models.Model):
     """Модель для комментариев."""
     review = models.ForeignKey('Review', on_delete=models.CASCADE)
@@ -128,7 +127,7 @@ class Comment(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='reviews',
+        related_name='comments',
         verbose_name='Автор',
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)

@@ -1,9 +1,9 @@
-from reviews.models import Comment, Review
-from users.models import User
-from rest_framework import serializers
 import re
+
 from django.db.models import Avg
-from reviews.models import Categorie, Genre, Title
+from rest_framework import serializers, status
+from reviews.models import Categorie, Comment, Genre, Review, Title
+from users.models import User
 
 
 class UserMeSerializer(serializers.ModelSerializer):
@@ -18,8 +18,8 @@ class UserMeSerializer(serializers.ModelSerializer):
         email = data.get('email')
         if username and not re.match(r'^[\w.@+-]+$', username):
             raise serializers.ValidationError(
-            'Поле username не соответствует паттерну'
-        )
+            'Поле username не соответствует паттерну',
+            )
         if data.get('username') == 'me':
             raise serializers.ValidationError(
                 'Использовать имя me запрещено'
@@ -103,8 +103,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('text', 'author', 'pub_date',)
-        read_only_fields = ('pub_date', 'author',)
+        fields = ('id', 'text', 'author', 'pub_date')
+        read_only_fields = ('pub_date', 'author')
         
         
 class ReviewSerializer(serializers.ModelSerializer):
@@ -116,8 +116,8 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = (Review,)
-        field = (
+        model = Review
+        fields = (
             'id',
             'text',
             'author',
@@ -130,11 +130,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
-        author = self.context['request'].author
+        author = data.get('author')
         title = self.context['view'].kwargs['title_id']
         existing_reviews = Review.objects.filter(title=title, author=author)
         if existing_reviews.exists():
-            raise serializers.ValidationError("Вы уже оставили отзыв.")
+            raise serializers.ValidationError("Вы уже оставили отзыв.", status=status.HTTP_400_BAD_REQUEST)
 
         return data
 

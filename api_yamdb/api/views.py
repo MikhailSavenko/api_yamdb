@@ -1,45 +1,35 @@
-from django.shortcuts import render
-from django.shortcuts import get_object_or_404
-from django.db.models import Avg
-
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-
-from reviews.models import Title, Review
-from .serializers import CommentSerializer
-
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-
 from api.filters import TitleFilter
-from api.permissions import IsAdminOrReadOnly
-from api.serializers import (
-    CategorieSerializer, GenreSerializer, TitleGetSerializer, TitleSerializer
-)
-from reviews.models import Categorie, Genre, Title
-
-from api.serializers import UserSerializer, UserSignUpSerializer, UserMeSerializer, ReviewSerializer
-from users.models import User
+from api.permissions import AdminOnlyPermission, IsAdminOrReadOnly
+from api.serializers import (CategorieSerializer, CommentSerializer,
+                             GenreSerializer, ReviewSerializer,
+                             TitleGetSerializer, TitleSerializer,
+                             UserMeSerializer, UserSerializer,
+                             UserSignUpSerializer)
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import viewsets
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.contrib.auth.tokens import default_token_generator  
-from rest_framework import status
-from .permissions import AdminOnlyPermission
+from django.db.models import Avg
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, status, viewsets
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Categorie, Genre, Review, Title
+from users.models import User
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для ревью."""
 
     serializer_class = ReviewSerializer
-    permission_classes = IsAuthenticatedOrReadOnly
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    authentication_classes = [JWTAuthentication]
 
     def get_queryset(self):
         title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
@@ -53,14 +43,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для Comment."""
     serializer_class = CommentSerializer
-    permission_classes = IsAuthenticatedOrReadOnly
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    authentication_classes = [JWTAuthentication]
 
     def perform_create(self, serializer):
         title = self.kwargs['title_id']
         review_id = self.kwargs['review_id']
         review = get_object_or_404(Review, title_id=title, id=review_id)
         serializer.save(review=review, author=self.request.user)
-        
+
+
 class CategorieViewSet(mixins.ListModelMixin,
                        mixins.CreateModelMixin,
                        mixins.DestroyModelMixin,
@@ -68,7 +60,8 @@ class CategorieViewSet(mixins.ListModelMixin,
     """Получаем/создаем/удаляем категорию."""
     queryset = Categorie.objects.all()
     serializer_class = CategorieSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
+    authentication_classes = [JWTAuthentication]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -81,18 +74,19 @@ class GenreViewset(mixins.ListModelMixin,
     """Получаем/создаем/удаляем жанр."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
+    authentication_classes = [JWTAuthentication]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Получаем/создаем/удаляем/редактируем произведение."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
+    authentication_classes = [JWTAuthentication]
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -140,7 +134,8 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = (AdminOnlyPermission,)
+    permission_classes = [AdminOnlyPermission]
+    authentication_classes = [JWTAuthentication]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
 
@@ -148,7 +143,8 @@ class UserMeView(RetrieveModelMixin, UpdateModelMixin, GenericAPIView):
     """Получаем и изменяем данные своей учетки на me/"""
     queryset = User.objects.all()
     serializer_class = UserMeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     http_method_names = ['get', 'patch']
 
     def get_object(self):
