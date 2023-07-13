@@ -46,6 +46,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     authentication_classes = [JWTAuthentication]
 
+    def review_object(self):
+        return get_object_or_404(Review, id=self.kwargs.get("review_id"))
+
+    def get_queryset(self):
+        return self.review_object().comments.all()
+
     def perform_create(self, serializer):
         title = self.kwargs['title_id']
         review_id = self.kwargs['review_id']
@@ -176,7 +182,10 @@ class CustomObtainJWTView(APIView):
         confirmation_code = request.data.get('confirmation_code')
 
         if not username or not confirmation_code:
-            return Response({'error': 'Заполните все обязательные строки'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'Заполните все обязательные строки'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         user = User.objects.get(username=username)
         confirmation_code_chek = default_token_generator.check_token(user, token=confirmation_code)
@@ -195,5 +204,3 @@ def send_confirmation_code(email, confirmation_code):
     fail_silently = True
 
     send_mail(subject, message, from_email, recipient_list, fail_silently)
-
-

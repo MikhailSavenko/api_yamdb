@@ -2,6 +2,7 @@ import re
 
 from django.db.models import Avg
 from rest_framework import serializers, status
+from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Categorie, Comment, Genre, Review, Title
 from users.models import User
 
@@ -105,8 +106,8 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
         read_only_fields = ('pub_date', 'author')
-        
-        
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор модели Review."""
 
