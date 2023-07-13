@@ -136,6 +136,8 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     permission_classes = [AdminOnlyPermission]
     authentication_classes = [JWTAuthentication]
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
 

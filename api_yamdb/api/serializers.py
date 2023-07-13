@@ -31,7 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
  
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'role', 'bio', 'first_name', 'last_name')
+        fields = ('email', 'username', 'role', 'bio', 'first_name', 'last_name')
         extra_kwargs = {
             'username': {'required': True},
             'email': {'required': True},
@@ -137,6 +137,3 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Вы уже оставили отзыв.", status=status.HTTP_400_BAD_REQUEST)
 
         return data
-
-        
-   

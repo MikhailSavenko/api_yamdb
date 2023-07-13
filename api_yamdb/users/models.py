@@ -18,6 +18,11 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=150, blank=True, verbose_name='Фамилия')
     is_moderator = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ('username',)
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
     def __str__(self):
         return self.username
     
