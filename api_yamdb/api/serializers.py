@@ -38,6 +38,19 @@ class UserSerializer(serializers.ModelSerializer):
             'email': {'required': True},
         }
 
+    def validate(self, data):
+        username = data.get('username')
+        email = data.get('email')
+        if username and not re.match(r'^[\w.@+-]+$', username):
+            raise serializers.ValidationError(
+            'Поле username не соответствует паттерну',
+            )
+        if data.get('username') == 'me':
+            raise serializers.ValidationError(
+                'Использовать имя me запрещено'
+            )
+        return data
+
 
 class UserSignUpSerializer(serializers.ModelSerializer):
     
@@ -46,6 +59,12 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         fields = ('email', 'username')
     
     def validate(self, data):
+        username = data.get('username')
+        email = data.get('email')
+        if username and not re.match(r'^[\w.@+-]+$', username):
+            raise serializers.ValidationError(
+            'Поле username не соответствует паттерну',
+            )
         if data.get('username') == 'me':
             raise serializers.ValidationError(
                 'Использовать имя me запрещено'

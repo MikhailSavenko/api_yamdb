@@ -1,5 +1,5 @@
 from api.filters import TitleFilter
-from api.permissions import AdminOnlyPermission, IsAdminOrReadOnly
+from api.permissions import AdminOnlyPermission, IsAdminOrReadOnly, CommentReviewsPermission
 from api.serializers import (CategorieSerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              TitleGetSerializer, TitleSerializer,
@@ -28,7 +28,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для ревью."""
 
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, CommentReviewsPermission]
     authentication_classes = [JWTAuthentication]
 
     def get_queryset(self):
@@ -43,7 +43,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для Comment."""
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [CommentReviewsPermission]
     authentication_classes = [JWTAuthentication]
 
     def review_object(self):
@@ -186,11 +186,16 @@ class CustomObtainJWTView(APIView):
                 {'error': 'Заполните все обязательные строки'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        if not User.objects.filter(username=username).exists():
+            return Response(
+                {'error': 'Неверный username'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        user = User.objects.get(username=username)
+        user = User.objects.filter(username=username)
         confirmation_code_chek = default_token_generator.check_token(user, token=confirmation_code)
         if confirmation_code_chek == False:
-            return Response({'error': 'Неправильный логин или код доступа'})
+            return Response({'error': 'Неправильный код доступа'}, status=status.HTTP_400_BAD_REQUEST)
         refresh = RefreshToken.for_user(user)
         return Response({'token': str(refresh.access_token)})
 
