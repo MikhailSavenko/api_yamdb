@@ -2,37 +2,46 @@ import re
 
 from django.db.models import Avg
 from rest_framework import serializers, status
-from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Categorie, Comment, Genre, Review, Title
 from users.models import User
 
 
 class UserMeSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'role', 'bio', 'first_name', 'last_name')
+        fields = (
+            'id',
+            'email',
+            'username',
+            'role',
+            'bio',
+            'first_name',
+            'last_name',
+        )
         read_only_fields = ('id', 'role')
 
     def validate(self, data):
         username = data.get('username')
-        email = data.get('email')
         if username and not re.match(r'^[\w.@+-]+$', username):
             raise serializers.ValidationError(
-            'Поле username не соответствует паттерну',
+                'Поле username не соответствует паттерну',
             )
         if data.get('username') == 'me':
-            raise serializers.ValidationError(
-                'Использовать имя me запрещено'
-            )
+            raise serializers.ValidationError('Использовать имя me запрещено')
         return data
 
 
 class UserSerializer(serializers.ModelSerializer):
- 
     class Meta:
         model = User
-        fields = ('email', 'username', 'role', 'bio', 'first_name', 'last_name')
+        fields = (
+            'email',
+            'username',
+            'role',
+            'bio',
+            'first_name',
+            'last_name',
+        )
         extra_kwargs = {
             'username': {'required': True},
             'email': {'required': True},
@@ -40,35 +49,28 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         username = data.get('username')
-        email = data.get('email')
         if username and not re.match(r'^[\w.@+-]+$', username):
             raise serializers.ValidationError(
-            'Поле username не соответствует паттерну',
+                'Поле username не соответствует паттерну',
             )
         if data.get('username') == 'me':
-            raise serializers.ValidationError(
-                'Использовать имя me запрещено'
-            )
+            raise serializers.ValidationError('Использовать имя me запрещено')
         return data
 
 
 class UserSignUpSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model = User
         fields = ('email', 'username')
-    
+
     def validate(self, data):
         username = data.get('username')
-        email = data.get('email')
         if username and not re.match(r'^[\w.@+-]+$', username):
             raise serializers.ValidationError(
-            'Поле username не соответствует паттерну',
+                'Поле username не соответствует паттерну',
             )
         if data.get('username') == 'me':
-            raise serializers.ValidationError(
-                'Использовать имя me запрещено'
-            )
+            raise serializers.ValidationError('Использовать имя me запрещено')
         return data
 
 
@@ -94,7 +96,13 @@ class TitleGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+            'id',
+            'name',
+            'year',
+            'rating',
+            'description',
+            'genre',
+            'category',
         )
 
     def get_rating(self, obj):
@@ -113,7 +121,7 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
-        
+
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор модели Comment."""
 
@@ -154,6 +162,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         title = self.context['view'].kwargs['title_id']
         existing_reviews = Review.objects.filter(title=title, author=author)
         if existing_reviews.exists():
-            raise serializers.ValidationError("Вы уже оставили отзыв.", status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError(
+                "Вы уже оставили отзыв.",
+                code='invalid',
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         return data

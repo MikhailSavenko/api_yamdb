@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('users', '0003_remove_user_is_moderator'),
     ]
@@ -12,6 +11,10 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelOptions(
             name='user',
-            options={'ordering': ('username',), 'verbose_name': 'Пользователь', 'verbose_name_plural': 'Пользователи'},
+            options={
+                'ordering': ('username',),
+                'verbose_name': 'Пользователь',
+                'verbose_name_plural': 'Пользователи',
+            },
         ),
     ]

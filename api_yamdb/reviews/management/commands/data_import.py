@@ -4,10 +4,7 @@ import pandas as pd
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-SERIES_NAME = {
-    'category': 'category_id',
-    'author': 'author_id'
-}
+SERIES_NAME = {'category': 'category_id', 'author': 'author_id'}
 MODEL_TABLE = {
     'user': 'users_user',
     'title': 'reviews_title',
@@ -15,23 +12,26 @@ MODEL_TABLE = {
     'genre': 'reviews_genre',
     'genretitle': 'reviews_genretitle',
     'review': 'reviews_review',
-    'comment': 'reviews_comment'
+    'comment': 'reviews_comment',
 }
 MESSAGE = 'Импорт из файла {path} в таблицу {table} осуществлен.'
 
 
 class Command(BaseCommand):
     """Импорт данных из файла .csv в БД."""
+
     help = 'Импорт данных из файла .csv в БД'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'model', type=str,
-            help='Название таблицы в которую осуществляется импорт данных'
+            'model',
+            type=str,
+            help='Название таблицы в которую осуществляется импорт данных',
         )
         parser.add_argument(
-            'path', type=str,
-            help='Путь к файлу из которого осуществляется импорт данных'
+            'path',
+            type=str,
+            help='Путь к файлу из которого осуществляется импорт данных',
         )
 
     def handle(self, *args, **kwargs):

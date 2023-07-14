@@ -5,10 +5,7 @@ import pandas as pd
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-SERIES_NAME = {
-    'category': 'category_id',
-    'author': 'author_id'
-}
+SERIES_NAME = {'category': 'category_id', 'author': 'author_id'}
 PATH_TABLE = (
     ('static/data/users.csv', 'users_user'),
     ('static/data/titles.csv', 'reviews_title'),
@@ -16,13 +13,14 @@ PATH_TABLE = (
     ('static/data/genre.csv', 'reviews_genre'),
     ('static/data/genre_title.csv', 'reviews_genretitle'),
     ('static/data/review.csv', 'reviews_review'),
-    ('static/data/comments.csv', 'reviews_comment')
+    ('static/data/comments.csv', 'reviews_comment'),
 )
 MESSAGE = 'Импорт из файла {path} в таблицу {table} осуществлен.'
 
 
 class Command(BaseCommand):
     """Импорт группы файлов в БД."""
+
     help = (
         'Импорт данных из файлов: users.csv, titles.csv, category.csv, '
         'genre.csv, genre_title.csv, review.csv, comments.csv в БД'

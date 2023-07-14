@@ -1,10 +1,20 @@
 from api.filters import TitleFilter
-from api.permissions import AdminOnlyPermission, IsAdminOrReadOnly, CommentReviewsPermission
-from api.serializers import (CategorieSerializer, CommentSerializer,
-                             GenreSerializer, ReviewSerializer,
-                             TitleGetSerializer, TitleSerializer,
-                             UserMeSerializer, UserSerializer,
-                             UserSignUpSerializer)
+from api.permissions import (
+    AdminOnlyPermission,
+    CommentReviewsPermission,
+    IsAdminOrReadOnly,
+)
+from api.serializers import (
+    CategorieSerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitleGetSerializer,
+    TitleSerializer,
+    UserMeSerializer,
+    UserSerializer,
+    UserSignUpSerializer,
+)
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -12,16 +22,20 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Categorie, Genre, Review, Title
 from users.models import User
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -37,11 +51,17 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get("title_id"))
-        serializer.save(author=self.request.user, title=title)
+        author = self.request.user
+
+        if title.reviews.filter(author=author).exists():
+            raise ValidationError("Вы уже оставили отзыв.", code='invalid')
+
+        serializer.save(author=author, title=title)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для Comment."""
+
     serializer_class = CommentSerializer
     permission_classes = [CommentReviewsPermission]
     authentication_classes = [JWTAuthentication]
@@ -59,11 +79,14 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(review=review, author=self.request.user)
 
 
-class CategorieViewSet(mixins.ListModelMixin,
-                       mixins.CreateModelMixin,
-                       mixins.DestroyModelMixin,
-                       viewsets.GenericViewSet):
+class CategorieViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     """Получаем/создаем/удаляем категорию."""
+
     queryset = Categorie.objects.all()
     serializer_class = CategorieSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
@@ -73,11 +96,14 @@ class CategorieViewSet(mixins.ListModelMixin,
     lookup_field = 'slug'
 
 
-class GenreViewset(mixins.ListModelMixin,
-                   mixins.CreateModelMixin,
-                   mixins.DestroyModelMixin,
-                   viewsets.GenericViewSet):
+class GenreViewset(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     """Получаем/создаем/удаляем жанр."""
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
@@ -89,6 +115,7 @@ class GenreViewset(mixins.ListModelMixin,
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Получаем/создаем/удаляем/редактируем произведение."""
+
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
@@ -103,9 +130,12 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.action in ('list', 'retrieve'):
-            queryset = (Title.objects.prefetch_related('reviews').all().
-                        annotate(rating=Avg('reviews__score')).
-                        order_by('name'))
+            queryset = (
+                Title.objects.prefetch_related('reviews')
+                .all()
+                .annotate(rating=Avg('reviews__score'))
+                .order_by('name')
+            )
             return queryset
         return Title.objects.all()
 
@@ -120,23 +150,29 @@ def user_signup_view(request):
     user = User.objects.filter(email=email, username=username).first()
     if user is not None:
         confirmation_code = default_token_generator.make_token(user)
-        send_confirmation_code(email=email, confirmation_code=confirmation_code)
-        return Response({'Оповещение': 'Письмо с кодом отправлено на маил'}, status=status.HTTP_200_OK)
+        send_confirmation_code(
+            email=email, confirmation_code=confirmation_code
+        )
+        return Response(
+            {'Оповещение': 'Письмо с кодом отправлено на маил'},
+            status=status.HTTP_200_OK,
+        )
     serializer = UserSignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-        
+
     username = serializer.validated_data['username']
     email = serializer.validated_data['email']
-        
+
     user = User.objects.create(username=username, email=email)
     confirmation_code = default_token_generator.make_token(user)
     send_confirmation_code(email=email, confirmation_code=confirmation_code)
-        
+
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """User GRUD"""
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
@@ -149,6 +185,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class UserMeView(RetrieveModelMixin, UpdateModelMixin, GenericAPIView):
     """Получаем и изменяем данные своей учетки на me/"""
+
     queryset = User.objects.all()
     serializer_class = UserMeSerializer
     permission_classes = [IsAuthenticated]
@@ -174,6 +211,7 @@ class UserMeView(RetrieveModelMixin, UpdateModelMixin, GenericAPIView):
 
 class CustomObtainJWTView(APIView):
     """Отправляет JWT токен в ответ на ПОСТ запрос с кодом"""
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -184,18 +222,23 @@ class CustomObtainJWTView(APIView):
         if not username or not confirmation_code:
             return Response(
                 {'error': 'Заполните все обязательные строки'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
         if not User.objects.filter(username=username).exists():
             return Response(
                 {'error': 'Неверный username'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         user = User.objects.filter(username=username)
-        confirmation_code_chek = default_token_generator.check_token(user, token=confirmation_code)
-        if confirmation_code_chek == False:
-            return Response({'error': 'Неправильный код доступа'}, status=status.HTTP_400_BAD_REQUEST)
+        confirmation_code_chek = default_token_generator.check_token(
+            user, token=confirmation_code
+        )
+        if confirmation_code_chek is False:
+            return Response(
+                {'error': 'Неправильный код доступа'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         refresh = RefreshToken.for_user(user)
         return Response({'token': str(refresh.access_token)})
 
