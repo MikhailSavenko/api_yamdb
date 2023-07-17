@@ -1,22 +1,20 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
-ROLE_CHOICES = (
-    ('user', 'User'),
-    ('moderator', 'Moderator'),
-    ('admin', 'Admin'),
-)
+from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):
     """Модель Пользователя."""
-
+    class Role(models.TextChoices):
+        USER = 'user', _('User')
+        ADMIN = 'admin', _('Admin')
+        MODERATOR = 'moderator', _('Moderator')
     username = models.CharField(max_length=150, unique=True, blank=False)
     email = models.EmailField(
         unique=True, blank=False, null=False, max_length=254
     )
     role = models.CharField(
-        max_length=30, choices=ROLE_CHOICES, default='user'
+        max_length=30, choices=Role.choices, default='user'
     )
     bio = models.TextField(blank=True)
     first_name = models.CharField(
