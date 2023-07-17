@@ -21,7 +21,6 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Categorie, Genre, Review, Title
 from users.models import User
@@ -34,7 +33,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = (
         IsAuthenticatedOrReadOnly, ModeratorAdminAuthorOrRead
     )
-    authentication_classes = [JWTAuthentication]
 
     def get_queryset(self):
         title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
@@ -57,7 +55,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (
         IsAuthenticatedOrReadOnly, ModeratorAdminAuthorOrRead
     )
-    authentication_classes = [JWTAuthentication]
 
     def get_queryset(self):
         return (
@@ -78,7 +75,6 @@ class CategorieViewSet(GetCreateDelete):
     queryset = Categorie.objects.all()
     serializer_class = CategorieSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
-    authentication_classes = [JWTAuthentication]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -90,7 +86,6 @@ class GenreViewset(GetCreateDelete):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
-    authentication_classes = [JWTAuthentication]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -105,7 +100,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     )
     serializer_class = TitleSerializer
     permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
-    authentication_classes = (JWTAuthentication,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -152,7 +146,6 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     lookup_field = 'username'
     permission_classes = (AdminOnlyPermission,)
-    authentication_classes = [JWTAuthentication]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -164,7 +157,6 @@ class UserMeView(RetrieveModelMixin, UpdateModelMixin, GenericAPIView):
     queryset = User.objects.all()
     serializer_class = UserMeSerializer
     permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
     http_method_names = ['get', 'patch']
 
     def get_object(self):
