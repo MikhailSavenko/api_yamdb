@@ -1,7 +1,6 @@
-import re
-
 from rest_framework import serializers, status
 from reviews.models import Categorie, Comment, Genre, Review, Title
+from reviews.validators import validate
 from users.models import User
 
 
@@ -20,14 +19,8 @@ class UserMeSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'role')
 
     def validate(self, data):
-        username = data.get('username')
-        if username and not re.match(r'^[\w.@+-]+$', username):
-            raise serializers.ValidationError(
-                'Поле username не соответствует паттерну',
-            )
-        if data.get('username') == 'me':
-            raise serializers.ValidationError('Использовать имя me запрещено')
-        return data
+        validate(self, data)
+        return super().validate(data)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -47,14 +40,8 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        username = data.get('username')
-        if username and not re.match(r'^[\w.@+-]+$', username):
-            raise serializers.ValidationError(
-                'Поле username не соответствует паттерну',
-            )
-        if data.get('username') == 'me':
-            raise serializers.ValidationError('Использовать имя me запрещено')
-        return data
+        validate(self, data)
+        return super().validate(data)
 
 
 class UserSignUpSerializer(serializers.ModelSerializer):
@@ -63,14 +50,8 @@ class UserSignUpSerializer(serializers.ModelSerializer):
         fields = ('email', 'username')
 
     def validate(self, data):
-        username = data.get('username')
-        if username and not re.match(r'^[\w.@+-]+$', username):
-            raise serializers.ValidationError(
-                'Поле username не соответствует паттерну',
-            )
-        if data.get('username') == 'me':
-            raise serializers.ValidationError('Использовать имя me запрещено')
-        return data
+        validate(self, data)
+        return super().validate(data)
 
 
 class CategorieSerializer(serializers.ModelSerializer):
@@ -151,7 +132,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         existing_reviews = Review.objects.filter(title=title, author=author)
         if existing_reviews.exists():
             raise serializers.ValidationError(
-                "Вы уже оставили отзыв.",
+                'Вы уже оставили отзыв.',
                 code='invalid',
                 status=status.HTTP_400_BAD_REQUEST,
             )

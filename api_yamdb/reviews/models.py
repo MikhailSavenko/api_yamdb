@@ -4,8 +4,6 @@ from users.models import User
 
 from .validators import validate_year_release
 
-TITLE_DATA = '{name}, {year}, {description}, {category}, {genre}'
-
 
 class Categorie(models.Model):
     """Категории (типы) произведений."""
