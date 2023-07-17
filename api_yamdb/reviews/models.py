@@ -4,8 +4,6 @@ from users.models import User
 
 from .validators import validate_year_release
 
-TITLE_DATA = '{name}, {year}, {description}, {category}, {genre}'
-
 
 class Categorie(models.Model):
     """Категории (типы) произведений."""
@@ -80,13 +78,7 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
 
     def __str__(self):
-        return TITLE_DATA.format(
-            name=self.name,
-            year=self.year,
-            description=self.description,
-            category=self.category,
-            genre=self.genre,
-        )
+        return f'{self.name}, {self.year}, {self.category}, {self.genre}'
 
 
 class GenreTitle(models.Model):
