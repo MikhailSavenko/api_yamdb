@@ -1,8 +1,8 @@
 from api.filters import TitleFilter
 from api.permissions import (
     AdminOnlyPermission,
-    CommentReviewsPermission,
     IsAdminOrReadOnly,
+    ModeratorAdminAuthorOrRead
 )
 from api.serializers import (
     CategorieSerializer,
@@ -15,12 +15,13 @@ from api.serializers import (
     UserSerializer,
     UserSignUpSerializer,
 )
+from api.viewsets import GetCreateDelete
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView
@@ -42,15 +43,17 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для ревью."""
 
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, CommentReviewsPermission]
+    permission_classes = (
+        IsAuthenticatedOrReadOnly, ModeratorAdminAuthorOrRead
+    )
     authentication_classes = [JWTAuthentication]
 
     def get_queryset(self):
-        title = get_object_or_404(Title, id=self.kwargs.get("title_id"))
+        title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title = get_object_or_404(Title, pk=self.kwargs.get("title_id"))
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
         author = self.request.user
 
         if title.reviews.filter(author=author).exists():
@@ -63,14 +66,16 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для Comment."""
 
     serializer_class = CommentSerializer
-    permission_classes = [CommentReviewsPermission]
+    permission_classes = (
+        IsAuthenticatedOrReadOnly, ModeratorAdminAuthorOrRead
+    )
     authentication_classes = [JWTAuthentication]
 
-    def review_object(self):
-        return get_object_or_404(Review, id=self.kwargs.get("review_id"))
-
     def get_queryset(self):
-        return self.review_object().comments.all()
+        return (
+            get_object_or_404(Review, id=self.kwargs.get('review_id'))
+            .comments.all()
+        )
 
     def perform_create(self, serializer):
         title = self.kwargs['title_id']
@@ -79,12 +84,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(review=review, author=self.request.user)
 
 
-class CategorieViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
+class CategorieViewSet(GetCreateDelete):
     """Получаем/создаем/удаляем категорию."""
 
     queryset = Categorie.objects.all()
@@ -96,12 +96,7 @@ class CategorieViewSet(
     lookup_field = 'slug'
 
 
-class GenreViewset(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
+class GenreViewset(GetCreateDelete):
     """Получаем/создаем/удаляем жанр."""
 
     queryset = Genre.objects.all()
@@ -116,10 +111,13 @@ class GenreViewset(
 class TitleViewSet(viewsets.ModelViewSet):
     """Получаем/создаем/удаляем/редактируем произведение."""
 
-    queryset = Title.objects.all()
+    queryset = (
+        Title.objects.prefetch_related('reviews')
+        .annotate(rating=Avg('reviews__score')).order_by('name')
+    )
     serializer_class = TitleSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
-    authentication_classes = [JWTAuthentication]
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminOrReadOnly)
+    authentication_classes = (JWTAuthentication,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -127,17 +125,6 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return TitleGetSerializer
         return TitleSerializer
-
-    def get_queryset(self):
-        if self.action in ('list', 'retrieve'):
-            queryset = (
-                Title.objects.prefetch_related('reviews')
-                .all()
-                .annotate(rating=Avg('reviews__score'))
-                .order_by('name')
-            )
-            return queryset
-        return Title.objects.all()
 
 
 @api_view(['POST'])
@@ -176,7 +163,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = [AdminOnlyPermission]
+    permission_classes = (AdminOnlyPermission,)
     authentication_classes = [JWTAuthentication]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)

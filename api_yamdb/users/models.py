@@ -41,7 +41,7 @@ class User(AbstractUser):
 
     @property
     def is_moderator(self):
-        return self.is_authenticated and self.is_moderator
+        return self.is_authenticated and self.role == 'moderator'
 
     @property
     def is_user(self):
