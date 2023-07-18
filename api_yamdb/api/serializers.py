@@ -1,5 +1,5 @@
 from django.contrib.auth.tokens import default_token_generator
-from rest_framework import serializers, status
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 
 from reviews.models import Categorie, Comment, Genre, Review, Title
@@ -135,7 +135,6 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор модели Review."""
-
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
@@ -143,27 +142,17 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = (
-            'id',
-            'text',
-            'author',
-            'score',
-            'pub_date',
-        )
-        read_only_fields = (
-            'author',
-            'pub_date',
-        )
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        read_only_fields = ('author', 'pub_date')
 
     def validate(self, data):
-        author = data.get('author')
-        title = self.context['view'].kwargs['title_id']
-        existing_reviews = Review.objects.filter(title=title, author=author)
-        if existing_reviews.exists():
+        if self.context['request'].method != 'POST':
+            return data
+        if Review.objects.filter(
+            title=self.context['view'].kwargs['title_id'],
+            author=self.context['request'].user
+        ).exists():
             raise serializers.ValidationError(
-                'Вы уже оставили отзыв.',
-                code='invalid',
-                status=status.HTTP_400_BAD_REQUEST,
+                'Вы уже оставили отзыв.'
             )
-
         return data

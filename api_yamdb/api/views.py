@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
@@ -28,7 +27,7 @@ from users.models import User
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    """Вьюсет для ревью."""
+    """Получаем/создаем/удаляем/редактируем отзывы."""
 
     serializer_class = ReviewSerializer
     permission_classes = (
@@ -36,22 +35,18 @@ class ReviewViewSet(viewsets.ModelViewSet):
         (IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser))
     )
 
+    def title_object(self):
+        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+
     def get_queryset(self):
-        title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
-        return title.reviews.all()
+        return self.title_object().reviews.all()
 
     def perform_create(self, serializer):
-        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        author = self.request.user
-
-        if title.reviews.filter(author=author).exists():
-            raise ValidationError("Вы уже оставили отзыв.", code='invalid')
-
-        serializer.save(author=author, title=title)
+        serializer.save(author=self.request.user, title=self.title_object())
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-
+    """Получаем/создаем/удаляем/редактируем комментарии."""
     serializer_class = CommentSerializer
     permission_classes = (
         IsAuthenticatedOrReadOnly,
@@ -65,10 +60,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        title = self.kwargs['title_id']
-        review_id = self.kwargs['review_id']
-        review = get_object_or_404(Review, title_id=title, id=review_id)
-        serializer.save(review=review, author=self.request.user)
+        serializer.save(review=get_object_or_404(
+            Review, title_id=self.kwargs['title_id'],
+            id=self.kwargs['review_id']
+        ), author=self.request.user)
 
 
 class CategorieViewSet(GetCreateDelete):
