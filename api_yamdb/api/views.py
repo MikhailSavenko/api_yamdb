@@ -1,6 +1,6 @@
 from api.filters import TitleFilter
 from api.permissions import (AdminOnlyPermission, IsAdminOrReadOnly,
-                             ModeratorAdminAuthorOrRead)
+                             IsAuthorUser, IsModeratorUser)
 from api.serializers import (CategorieSerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              TitleGetSerializer, TitleSerializer,
@@ -31,7 +31,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     serializer_class = ReviewSerializer
     permission_classes = (
-        IsAuthenticatedOrReadOnly, ModeratorAdminAuthorOrRead
+        IsAuthenticatedOrReadOnly,
+        (IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser))
     )
 
     def get_queryset(self):
@@ -53,7 +54,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     serializer_class = CommentSerializer
     permission_classes = (
-        IsAuthenticatedOrReadOnly, ModeratorAdminAuthorOrRead
+        IsAuthenticatedOrReadOnly,
+        (IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser))
     )
 
     def get_queryset(self):
