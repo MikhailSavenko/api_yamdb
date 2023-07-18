@@ -1,12 +1,3 @@
-from api.filters import TitleFilter
-from api.permissions import (AdminOnlyPermission, IsAdminOrReadOnly,
-                             IsAuthorUser, IsModeratorUser)
-from api.serializers import (CategorieSerializer, CommentSerializer,
-                             GenreSerializer, ReviewSerializer,
-                             TitleGetSerializer, TitleSerializer,
-                             UserMeSerializer, UserSerializer,
-                             UserSignUpSerializer)
-from api.viewsets import GetCreateDelete
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -22,6 +13,16 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from api.filters import TitleFilter
+from api.permissions import (AdminOnlyPermission, IsAdminOrReadOnly,
+                             IsAuthorUser, IsModeratorUser)
+from api.serializers import (CategorieSerializer, CommentSerializer,
+                             GenreSerializer, ReviewSerializer,
+                             TitleGetSerializer, TitleSerializer,
+                             UserMeSerializer, UserSerializer,
+                             UserSignUpSerializer, ObtainJWTSerializer)
+from api.viewsets import GetCreateDelete
 from reviews.models import Categorie, Genre, Review, Title
 from users.models import User
 
@@ -50,7 +51,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    """Вьюсет для Comment."""
 
     serializer_class = CommentSerializer
     permission_classes = (
@@ -185,29 +185,10 @@ class ObtainJWTView(APIView):
     authentication_classes = []
 
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        confirmation_code = request.data.get('confirmation_code')
+        serializer = ObtainJWTSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not username or not confirmation_code:
-            return Response(
-                {'error': 'Заполните все обязательные строки'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not get_object_or_404(User, username=username):
-            return Response(
-                {'error': 'Неверный username'},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        user = User.objects.filter(username=username)
-        confirmation_code_chek = default_token_generator.check_token(
-            user, token=confirmation_code
-        )
-        if not confirmation_code_chek:
-            return Response(
-                {'error': 'Неправильный код доступа'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
         return Response({'token': str(refresh.access_token)})
 

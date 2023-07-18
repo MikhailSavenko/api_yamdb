@@ -1,8 +1,36 @@
+from django.contrib.auth.tokens import default_token_generator
 from rest_framework import serializers, status
+from rest_framework.exceptions import NotFound
 
 from reviews.models import Categorie, Comment, Genre, Review, Title
 from reviews.validators import validate
 from users.models import User
+
+
+class ObtainJWTSerializer(serializers.Serializer):
+    """Сериалайзер для получения токена пользователем"""
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        confirmation_code = attrs.get('confirmation_code')
+
+        if not username or not confirmation_code:
+            raise serializers.ValidationError("Заполните все обязательные"
+                                              "строки")
+
+        user = User.objects.filter(username=username)
+        if not user.exists():
+            raise NotFound("Неверный username")
+
+        user = user.first()
+        confirmation_code_chek = default_token_generator.check_token(user, token=confirmation_code)
+        if not confirmation_code_chek:
+            raise serializers.ValidationError("Неправильный код доступа")
+
+        attrs['user'] = user
+        return attrs
 
 
 class UserMeSerializer(serializers.ModelSerializer):
