@@ -1,7 +1,40 @@
-from rest_framework import serializers, status
+from django.contrib.auth.tokens import default_token_generator
+from rest_framework import serializers
+from rest_framework.exceptions import NotFound
+
 from reviews.models import Categorie, Comment, Genre, Review, Title
 from reviews.validators import validate
 from users.models import User
+
+
+class ObtainJWTSerializer(serializers.Serializer):
+    """Сериалайзер для получения токена пользователем"""
+
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        confirmation_code = attrs.get('confirmation_code')
+
+        if not username or not confirmation_code:
+            raise serializers.ValidationError(
+                "Заполните все обязательные" "строки"
+            )
+
+        user = User.objects.filter(username=username)
+        if not user.exists():
+            raise NotFound("Неверный username")
+
+        user = user.first()
+        confirmation_code_chek = default_token_generator.check_token(
+            user, token=confirmation_code
+        )
+        if not confirmation_code_chek:
+            raise serializers.ValidationError("Неправильный код доступа")
+
+        attrs['user'] = user
+        return attrs
 
 
 class UserMeSerializer(serializers.ModelSerializer):
@@ -114,27 +147,15 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = (
-            'id',
-            'text',
-            'author',
-            'score',
-            'pub_date',
-        )
-        read_only_fields = (
-            'author',
-            'pub_date',
-        )
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        read_only_fields = ('author', 'pub_date')
 
     def validate(self, data):
-        author = data.get('author')
-        title = self.context['view'].kwargs['title_id']
-        existing_reviews = Review.objects.filter(title=title, author=author)
-        if existing_reviews.exists():
-            raise serializers.ValidationError(
-                'Вы уже оставили отзыв.',
-                code='invalid',
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+        if self.context['request'].method != 'POST':
+            return data
+        if Review.objects.filter(
+            title=self.context['view'].kwargs['title_id'],
+            author=self.context['request'].user,
+        ).exists():
+            raise serializers.ValidationError('Вы уже оставили отзыв.')
         return data

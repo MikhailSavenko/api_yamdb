@@ -6,8 +6,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 logging.basicConfig(
-    level=logging.INFO,
-    format=('%(asctime)s - %(levelname)s - %(message)s')
+    level=logging.INFO, format=('%(asctime)s - %(levelname)s - %(message)s')
 )
 
 SERIES_NAME = {'category': 'category_id', 'author': 'author_id'}
@@ -49,8 +48,8 @@ class Command(BaseCommand):
             data.rename(columns=SERIES_NAME).to_sql(
                 MODEL_TABLE[model], connection, if_exists="append", index=False
             )
-            logging.info(MESSAGE.format(
-                table=MODEL_TABLE[model], path=path_file)
+            logging.info(
+                MESSAGE.format(table=MODEL_TABLE[model], path=path_file)
             )
         except Exception as error:
             logging.error(error)

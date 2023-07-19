@@ -1,6 +1,13 @@
-from api.views import (CategorieViewSet, CommentViewSet, GenreViewset,
-                       ObtainJWTView, ReviewViewSet, TitleViewSet, UserMeView,
-                       UserViewSet, user_signup_view)
+from api.views import (
+    CategorieViewSet,
+    CommentViewSet,
+    GenreViewset,
+    ObtainJWTView,
+    ReviewViewSet,
+    TitleViewSet,
+    UserViewSet,
+    user_signup_view,
+)
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
@@ -22,10 +29,8 @@ router.register(
 router.register(r'users', UserViewSet, basename='users')
 
 urlpatterns = [
-    path(f'{VERSION}/users/me/', UserMeView.as_view(), name='users-me'),
-    path(
-        f'{VERSION}/auth/token/', ObtainJWTView.as_view(), name='token'
-    ),
+    # path(f'{VERSION}/users/me/', UserMeView.as_view(), name='users-me'),
+    path(f'{VERSION}/auth/token/', ObtainJWTView.as_view(), name='token'),
     path(f'{VERSION}/auth/signup/', user_signup_view, name='signup'),
     path(f'{VERSION}/', include(router.urls)),
 ]
