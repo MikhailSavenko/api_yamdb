@@ -5,10 +5,12 @@ from django.utils.translation import gettext_lazy as _
 
 class User(AbstractUser):
     """Модель Пользователя."""
+
     class Role(models.TextChoices):
         USER = 'user', _('User')
         ADMIN = 'admin', _('Admin')
         MODERATOR = 'moderator', _('Moderator')
+
     username = models.CharField(max_length=150, unique=True, blank=False)
     email = models.EmailField(
         unique=True, blank=False, null=False, max_length=254

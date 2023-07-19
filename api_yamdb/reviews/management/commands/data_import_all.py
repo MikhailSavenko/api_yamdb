@@ -7,8 +7,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 logging.basicConfig(
-    level=logging.INFO,
-    format=('%(asctime)s - %(levelname)s - %(message)s')
+    level=logging.INFO, format=('%(asctime)s - %(levelname)s - %(message)s')
 )
 
 SERIES_NAME = {'category': 'category_id', 'author': 'author_id'}

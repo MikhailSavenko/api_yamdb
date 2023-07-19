@@ -9,6 +9,7 @@ from users.models import User
 
 class ObtainJWTSerializer(serializers.Serializer):
     """Сериалайзер для получения токена пользователем"""
+
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
 
@@ -17,15 +18,18 @@ class ObtainJWTSerializer(serializers.Serializer):
         confirmation_code = attrs.get('confirmation_code')
 
         if not username or not confirmation_code:
-            raise serializers.ValidationError("Заполните все обязательные"
-                                              "строки")
+            raise serializers.ValidationError(
+                "Заполните все обязательные" "строки"
+            )
 
         user = User.objects.filter(username=username)
         if not user.exists():
             raise NotFound("Неверный username")
 
         user = user.first()
-        confirmation_code_chek = default_token_generator.check_token(user, token=confirmation_code)
+        confirmation_code_chek = default_token_generator.check_token(
+            user, token=confirmation_code
+        )
         if not confirmation_code_chek:
             raise serializers.ValidationError("Неправильный код доступа")
 
@@ -135,6 +139,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор модели Review."""
+
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
@@ -150,9 +155,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             return data
         if Review.objects.filter(
             title=self.context['view'].kwargs['title_id'],
-            author=self.context['request'].user
+            author=self.context['request'].user,
         ).exists():
-            raise serializers.ValidationError(
-                'Вы уже оставили отзыв.'
-            )
+            raise serializers.ValidationError('Вы уже оставили отзыв.')
         return data
