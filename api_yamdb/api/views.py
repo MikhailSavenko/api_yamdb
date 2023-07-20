@@ -1,3 +1,12 @@
+from api.filters import TitleFilter
+from api.permissions import (AdminOnlyPermission, IsAdminOrReadOnly,
+                             IsAuthorUser, IsModeratorUser)
+from api.serializers import (CategorieSerializer, CommentSerializer,
+                             GenreSerializer, ObtainJWTSerializer,
+                             ReviewSerializer, TitleGetSerializer,
+                             TitleSerializer, UserMeSerializer, UserSerializer,
+                             UserSignUpSerializer)
+from api.viewsets import GetCreateDelete
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -5,35 +14,11 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from api.filters import TitleFilter
-from api.permissions import (
-    AdminOnlyPermission,
-    IsAdminOrReadOnly,
-    IsAuthorUser,
-    IsModeratorUser,
-)
-from api.serializers import (
-    CategorieSerializer,
-    CommentSerializer,
-    GenreSerializer,
-    ObtainJWTSerializer,
-    ReviewSerializer,
-    TitleGetSerializer,
-    TitleSerializer,
-    UserMeSerializer,
-    UserSerializer,
-    UserSignUpSerializer,
-)
-from api.viewsets import GetCreateDelete
 from reviews.models import Categorie, Genre, Review, Title
 from users.models import User
 
@@ -44,14 +29,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = (
         IsAuthenticatedOrReadOnly,
-        (IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser)),
+        IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser),
     )
 
     def title_object(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
 
     def get_queryset(self):
-        return self.title_object().reviews.all()
+        return self.title_object().reviews.select_related('author')
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, title=self.title_object())
@@ -165,25 +150,31 @@ class UserViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     @action(
-        methods=['get', 'patch'],
+        methods=['patch'],
         detail=False,
         url_path='me',
         permission_classes=[IsAuthenticated],
         serializer_class=UserMeSerializer,
     )
-    def user_me(self, request):
+    def patch(self, request):
         user = request.user
-        if request.method == 'GET':
-            serializer = self.get_serializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        if request.method == 'PATCH':
-            serializer = self.get_serializer(
-                user, data=request.data, partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        serializer = self.get_serializer(
+            user, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=False,
+        url_path='me',
+        permission_classes=[IsAuthenticated],
+        serializer_class=UserMeSerializer,
+    )
+    def get(self, request):
+        user = request.user
+        serializer = self.get_serializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ObtainJWTView(APIView):
