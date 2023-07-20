@@ -8,6 +8,7 @@ app_name = 'api'
 VERSION = 'v1'
 
 router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='users')
 router.register('categories', CategorieViewSet, basename='categories')
 router.register('genres', GenreViewset, basename='genres')
 router.register('titles', TitleViewSet, basename='titles')
@@ -19,7 +20,7 @@ router.register(
 router.register(
     r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='titles'
 )
-router.register(r'users', UserViewSet, basename='users')
+
 
 urlpatterns = [
     # path(f'{VERSION}/users/me/', UserMeView.as_view(), name='users-me'),
