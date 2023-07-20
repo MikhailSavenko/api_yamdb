@@ -1,3 +1,12 @@
+from api.filters import TitleFilter
+from api.permissions import (AdminOnlyPermission, IsAdminOrReadOnly,
+                             IsAuthorUser, IsModeratorUser)
+from api.serializers import (CategorieSerializer, CommentSerializer,
+                             GenreSerializer, ObtainJWTSerializer,
+                             ReviewSerializer, TitleGetSerializer,
+                             TitleSerializer, UserMeSerializer, UserSerializer,
+                             UserSignUpSerializer)
+from api.viewsets import GetCreateDelete
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -5,35 +14,11 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from api.filters import TitleFilter
-from api.permissions import (
-    AdminOnlyPermission,
-    IsAdminOrReadOnly,
-    IsAuthorUser,
-    IsModeratorUser,
-)
-from api.serializers import (
-    CategorieSerializer,
-    CommentSerializer,
-    GenreSerializer,
-    ObtainJWTSerializer,
-    ReviewSerializer,
-    TitleGetSerializer,
-    TitleSerializer,
-    UserMeSerializer,
-    UserSerializer,
-    UserSignUpSerializer,
-)
-from api.viewsets import GetCreateDelete
 from reviews.models import Categorie, Genre, Review, Title
 from users.models import User
 
@@ -44,14 +29,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = (
         IsAuthenticatedOrReadOnly,
-        (IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser)),
+        IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser),
     )
 
     def title_object(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
 
     def get_queryset(self):
-        return self.title_object().reviews.all()
+        return self.title_object().reviews.select_related('author')
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, title=self.title_object())
