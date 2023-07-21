@@ -29,7 +29,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = (
         IsAuthenticatedOrReadOnly,
-        IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser),
+        IsAdminOrReadOnly | IsAuthorUser | IsModeratorUser
     )
 
     def title_object(self):
@@ -48,7 +48,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = (
         IsAuthenticatedOrReadOnly,
-        (IsAdminOrReadOnly | (IsAuthorUser | IsModeratorUser)),
+        IsAdminOrReadOnly | IsAuthorUser | IsModeratorUser
     )
 
     def get_queryset(self):
@@ -150,30 +150,19 @@ class UserViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     @action(
-        methods=['patch'],
         detail=False,
         url_path='me',
+        methods=['GET', 'PATCH'],
         permission_classes=[IsAuthenticated],
         serializer_class=UserMeSerializer,
     )
-    def patch(self, request):
+    def patch_me(self, request):
         user = request.user
         serializer = self.get_serializer(
             user, data=request.data, partial=True
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(
-        detail=False,
-        url_path='me',
-        permission_classes=[IsAuthenticated],
-        serializer_class=UserMeSerializer,
-    )
-    def get(self, request):
-        user = request.user
-        serializer = self.get_serializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

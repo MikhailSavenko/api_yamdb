@@ -23,7 +23,6 @@ router.register(
 
 
 urlpatterns = [
-    # path(f'{VERSION}/users/me/', UserMeView.as_view(), name='users-me'),
     path(f'{VERSION}/auth/token/', ObtainJWTView.as_view(), name='token'),
     path(f'{VERSION}/auth/signup/', user_signup_view, name='signup'),
     path(f'{VERSION}/', include(router.urls)),
