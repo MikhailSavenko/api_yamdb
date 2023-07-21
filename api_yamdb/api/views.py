@@ -152,17 +152,11 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         url_path='me',
+        methods=['GET', 'PATCH'],
         permission_classes=[IsAuthenticated],
         serializer_class=UserMeSerializer,
     )
-    def get_me(self, request):
-        """Обрабатывает GET запрос users/me"""
-        user = request.user
-        serializer = self.get_serializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request):
-        """Обрабатывает PATCH запрос users/me"""
+    def patch_me(self, request):
         user = request.user
         serializer = self.get_serializer(
             user, data=request.data, partial=True
